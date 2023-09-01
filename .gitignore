@@ -1,0 +1,4 @@
+local/babelnet_conf_local.yml
+remote/babelnet_conf.yml
+.gitignore
+launch_ssh.sh
