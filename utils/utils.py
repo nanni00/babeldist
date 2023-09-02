@@ -16,3 +16,7 @@ def get_full_class_name(obj):
     if module is None or module == str.__class__.__module__:
         return obj.__class__.__name__
     return module + '.' + obj.__class__.__name__
+
+def get_progress_bar(perc, len_bar=100):
+    return u"\u2588"*int(perc//10) + ' ' + str(perc)
+  
