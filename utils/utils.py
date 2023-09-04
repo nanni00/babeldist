@@ -18,5 +18,5 @@ def get_full_class_name(obj):
     return module + '.' + obj.__class__.__name__
 
 def get_progress_bar(perc, len_bar=100):
-    return u"\u2588"*int(perc//10) + ' ' + str(perc)
+    return str(perc) + ' ' +u"\u2588"*int(perc//10)
   
