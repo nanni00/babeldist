@@ -1,5 +1,0 @@
-.gitignore
-remote/babelnet_conf.yml
-local_v5_0/babelnet_conf.yml
-local_v5_2/babelnet_conf.yml
-utils/__pycache__
