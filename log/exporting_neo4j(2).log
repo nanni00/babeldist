@@ -1,0 +1,4 @@
+start_node=['bn:00060765n', 'bn:00076928n']
+max_visits=1000
+Reached max visits
+Added 35670 nodes, added 35672 edges.total_time,4m,56s
