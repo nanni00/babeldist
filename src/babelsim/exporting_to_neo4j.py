@@ -1,7 +1,7 @@
 import os
 import sys
-sys.path.append(os.path.pardir)
-from utils import utils
+sys.path.append(os.path.curdir)
+from src.utils import utils
 import time
 
 import neo4j
@@ -9,6 +9,7 @@ from neo4j import GraphDatabase
 
 from babelnet import BabelSynsetID
 from babelnet.data.relation import BabelPointer
+
 from zerorpc import TimeoutExpired, LostRemote
 
 
@@ -42,7 +43,7 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
                                 database='neo4j', URI="bolt://localhost:7687", USER="giovanni", PASSWD="BabeldistGraph"):
 
     # EXPORTING BABELNET TO NEO4J - ONLY SYNSET IDs, NO LEMMA OR OTHER PROPERTIES
-    fname = utils.get_next_logfile_number('exporting_neo4j', extension='.log')
+    fname = utils.get_next_logfile_number('exporting_neo4j', extension='log')
 
     start_synset_id = start_synset_id
     max_synset_visited, n = max_synsets_visited, 0
@@ -105,5 +106,5 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
                 if n == max_synset_visited: logfname.write('Reached max visits\n')
                 logfname.write(f'Added {end_n - start_n} nodes, added {end_r - start_r} edges.')
                 end_t = time.time()
-                min, sec = divmod(end_t - start_t, 60)
-                logfname.write(f'total_time,{int(min)}m,{int(sec)}s') 
+                m, s = divmod(end_t - start_t, 60)
+                logfname.write(f'total_time,{int(m)}m,{int(s)}s') 

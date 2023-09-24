@@ -1,7 +1,3 @@
-import sys
-sys.path.append('..')
-from utils import utils
-
 import neo4j
 from neo4j import GraphDatabase
 

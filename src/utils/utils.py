@@ -2,27 +2,27 @@ import os
 from typing import List
 
 
-_log_dir_rel_path = '../log/'
+_log_dir_rel_path = 'log/'
 
 
-def get_current_logfile_number(fname, extension='.log'):
+def get_current_logfile_number(fname, extension='log'):
     ncpy = 1
-    if not os.path.exists(_log_dir_rel_path + fname + extension):
-        return _log_dir_rel_path + fname + extension
+    if not os.path.exists(_log_dir_rel_path + fname + '.' + extension):
+        return _log_dir_rel_path + fname + '.' + extension
     else:
-        while os.path.exists(f'{_log_dir_rel_path}{fname}({ncpy}){extension}'):
+        while os.path.exists(_log_dir_rel_path + fname + '(' + str(ncpy - 1) + ')' + '.' + extension):
             ncpy += 1
-        return f'{_log_dir_rel_path}{fname}({ncpy-1}){extension}'
+        return _log_dir_rel_path + fname + '(' + str(ncpy - 1) + ')' + '.' + extension
 
 
-def get_next_logfile_number(fname, extension='.log'):
+def get_next_logfile_number(fname, extension='log'):
     ncpy = 1
-    if not os.path.exists(_log_dir_rel_path + fname + extension):
-        return _log_dir_rel_path + fname + extension
+    if not os.path.exists(_log_dir_rel_path + fname + '.' + extension):
+        return _log_dir_rel_path + fname + '.' + extension
     else:
-        while os.path.exists(f'{_log_dir_rel_path}{fname}({ncpy}){extension}'):
+        while os.path.exists(_log_dir_rel_path + fname + '(' + ncpy + ')' + '.' + extension):
             ncpy += 1
-        return f'{_log_dir_rel_path}{fname}({ncpy}){extension}'
+        return _log_dir_rel_path + fname + '(' + ncpy + ')' + '.' + extension
 
 
 def get_full_class_name(obj):
@@ -32,7 +32,7 @@ def get_full_class_name(obj):
     return module + '.' + obj.__class__.__name__
 
 
-def get_progress_bar(perc, len_bar=100):
+def get_progress_bar(perc):
     return str(perc) + ' ' +u"\u2588"*int(perc//10)
   
 
