@@ -64,8 +64,8 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
             with open(fname, 'x') as logfname:
                 logfname.write(f'database={database}\n')
                 logfname.write(f'start_node={start_synset_id}\n')
-                logfname.flush()
                 logfname.write(f'max_visits={max_synset_visited}\n')
+                logfname.flush()
 
                 start_t = time.time()
                 while q.q and n < max_synset_visited:
@@ -87,7 +87,6 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
                         n += 1
                         lemma = synset.main_sense().full_lemma
                     except (TimeoutExpired, LostRemote, AttributeError) as e:
-                        e.with_traceback()
                         hyponym_edges = []
 
                     hyponym_data = []
@@ -112,6 +111,7 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
                     if n % 1000 == 0:
                         tx.commit()
                         tx = session.begin_transaction()
+                        
 
                 end_n, end_r = tx.run(_count_nodes_query).values()[0][0], tx.run(_count_edges_query).values()[0][0]
                 tx.commit()

@@ -1,4 +1,10 @@
-start_node=['bn:00062164n']
-max_visits=1
-Reached max visits
-Added 0 nodes, added 0 edges.total_time,0m,0s
+database=babelexpDB.
+start_node=['bn:00062164n'].
+max_visits=5000.
+Synset bn:12660747n has not any main sense.
+Synset bn:05081737n has not any main sense.
+Synset bn:25701511n has not any main sense.
+Synset bn:25469576n has not any main sense.
+Synset bn:04598419n has not any main sense.
+Synset bn:18137937n has not any main sense.
+Synset bn:09180501n has not any main sense.
