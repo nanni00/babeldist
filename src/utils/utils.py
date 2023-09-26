@@ -2,7 +2,7 @@ import os
 from typing import List
 
 
-_log_dir_rel_path = 'log/'
+_log_dir_rel_path = 'src/log/'
 
 
 def get_current_logfile_number(fname, extension='log'):
@@ -20,9 +20,9 @@ def get_next_logfile_number(fname, extension='log'):
     if not os.path.exists(_log_dir_rel_path + fname + '.' + extension):
         return _log_dir_rel_path + fname + '.' + extension
     else:
-        while os.path.exists(_log_dir_rel_path + fname + '(' + ncpy + ')' + '.' + extension):
+        while os.path.exists(_log_dir_rel_path + fname + '(' + str(ncpy) + ')' + '.' + extension):
             ncpy += 1
-        return _log_dir_rel_path + fname + '(' + ncpy + ')' + '.' + extension
+        return _log_dir_rel_path + fname + '(' + str(ncpy) + ')' + '.' + extension
 
 
 def get_full_class_name(obj):

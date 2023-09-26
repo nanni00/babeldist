@@ -1,6 +1,6 @@
 import neo4j
 from neo4j import GraphDatabase
-
+import babelnet as bn
 
 class DistanceSimilarity:
     def __init__(self, 
