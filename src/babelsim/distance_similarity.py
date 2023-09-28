@@ -1,6 +1,8 @@
+import numpy as np
+from pprint import pprint 
 import neo4j
 from neo4j import GraphDatabase
-import babelnet as bn
+
 
 class DistanceSimilarity:
     def __init__(self, 
@@ -22,7 +24,7 @@ class DistanceSimilarity:
         MATCH (s1:Synset {synsetID: $synsetID_1})
         MATCH (s2:Synset {synsetID: $synsetID_2})
         MATCH p = shortestPath((s1)-[:IS_A*..12]-(s2))
-        RETURN p as shortest_path, length(p) as length_shortestPath """
+        RETURN p as shortest_path, LENGTH(p) as shortest_path_length """
         
         self._wup_query = """
         MATCH (s1:Synset {synsetID: $synsetID_1})
@@ -74,6 +76,12 @@ class DistanceSimilarity:
         WITH LENGTH(p) AS l, COUNT(DISTINCT singleNode.intermediateCommunities) AS c
         RETURN -log(toFloat(1) / (l + c - 1)) AS community_path_similarity_2 """
 
+        self._community_path_query_3 = """
+        MATCH (s1:Synset {synsetID: $synsetID_1})
+        MATCH (s2:Synset {synsetID: $synsetID_2})
+        MATCH p = shortestPath((s1)-[:IS_A*..12]-(s2))
+        RETURN p as shortest_path, LENGTH(p) as shortest_path_length """
+
     def get_random_synset_id(self):
         return self._driver.execute_query(self._random_node_query, 
                                          result_transformer_=neo4j.Result.data,
@@ -89,22 +97,17 @@ class DistanceSimilarity:
         return p[0]['length_shortestPath']
 
     def shortest_path_synsets_lemmas(self, s1_id: str, s2_id: str):
-        from babelnet import BabelSynsetID
         shortest_path = self._driver.execute_query(
             self._shortestPath_query, 
             {'synsetID_1': s1_id,
              'synsetID_2': s2_id},
             database_=self._database,
-            result_transformer_=neo4j.Result.data)
+            result_transformer_=neo4j.Result.data)[0]['shortest_path']
 
-        for item in shortest_path[0]['shortest_path']:
-            if type(item) is dict and 'synsetID' in item.keys():
-                try:
-                    print(f"{item['synsetID']}, \
-                          {BabelSynsetID(item['synsetID']).to_synset().main_sense().full_lemma}")
-                except Exception as e:
-                    print(e.args[0])
-
+        for item in shortest_path:
+            if type(item) is dict:
+                print(f"{item['synsetID']}, {item['lemma']}")
+                
     def wup_similarity(self, s1_id: str, s2_id: str):
         return self._driver.execute_query(
             self._wup_query,
@@ -128,7 +131,7 @@ class DistanceSimilarity:
             self._path_query,
             {'synsetID_1': s1_id,
              'synsetID_2': s2_id},
-            database_='neo4j',
+            database_=self._database,
             result_transformer_=neo4j.Result.data)[0]['path_similarity']
 
     def community_path_similarity(self, s1_id: str, s2_id: str):
@@ -147,6 +150,24 @@ class DistanceSimilarity:
             database_=self._database,
             result_transformer_=neo4j.Result.data)[0]['community_path_similarity_2']
 
+    def community_path_similarity_3(self, s1_id: str, s2_id: str):
+        result = self._driver.execute_query(
+            self._community_path_query_3,
+            {'synsetID_1': s1_id,
+             'synsetID_2': s2_id},
+            database_=self._database,
+            result_transformer_=neo4j.Result.data)[0]
+        sp, splen = result['shortest_path'], result['shortest_path_length']
+
+        comcount = 0 # it's like 1 - 1
+        first_synset = sp.pop(0)
+        for x in (synset for synset in sp if synset != 'IS_A'):
+            if set(first_synset['communityIDs']).intersection(set(x['communityIDs'])) == set():
+                comcount += 1
+            first_synset = x
+
+        return -np.log(1 / (splen + comcount))
+
     def evaluate_similarities(self, s1_id: str, s2_id: str, verbose=True):
         if verbose:
             from babelnet import BabelSynsetID
@@ -158,6 +179,7 @@ class DistanceSimilarity:
         print(f'path:\t\t{  round(self.path_similarity( s1_id, s2_id), 3)}')
         print(f'path_com:\t{round(self.community_path_similarity(s1_id, s2_id), 3)}')
         print(f'path_com_2:\t{round(self.community_path_similarity_2(s1_id, s2_id), 3)}')
+        print(f'path_com_3:\t{round(self.community_path_similarity_3(s1_id, s2_id), 3)}')
 
     def nodes_with_common_ancestor(self, ancestor_id):
         number_of_nodes_with_ancestor_query = "MATCH (n:Synset)-[:IS_A*]->(ancestor:Synset {synsetID: $ancestorID}) RETURN count(n)"
@@ -185,3 +207,9 @@ class DistanceSimilarity:
     def random_example(self, verbose=True):
         id1, id2 = self.get_random_synset_id(), self.get_random_synset_id()
         self.evaluate_similarities(id1, id2, verbose)
+
+
+ds = DistanceSimilarity(database='babelexpdb')
+while (s := input('Another example? ')) != 'n':
+    ds.evaluate_similarities(ds.get_random_synset_id(), ds.get_random_synset_id())
+
