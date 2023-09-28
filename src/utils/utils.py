@@ -1,4 +1,5 @@
 import os
+import time
 from typing import List
 
 
@@ -35,6 +36,12 @@ def get_full_class_name(obj):
 def get_progress_bar(perc):
     return str(perc) + ' ' +u"\u2588"*int(perc//10)
   
+
+def get_localtime_str():
+    lt = time.localtime()
+    return f"{lt.tm_year}/{lt.tm_mon}/{lt.tm_mday} {lt.tm_hour}:{lt.tm_min}:{lt.tm_sec}"
+                
+
 
 class Queue:
     def __init__(self, qtype: str, start_nodes: List[str]):

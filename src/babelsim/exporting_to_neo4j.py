@@ -27,6 +27,15 @@ WITH s, hyponym
 WHERE s.synsetID <> hyponym.synsetID
 MERGE (s)<-[:IS_A]-(hyponym) """
 
+_merge_no_lemma_graph_query = """
+UNWIND $hyponyms as hyponym_data
+MERGE (s:Synset {synsetID: $synsetID})
+MERGE (hyponym:Synset {synsetID: hyponym_data})
+WITH s, hyponym
+WHERE s.synsetID <> hyponym.synsetID
+MERGE (s)<-[:IS_A]-(hyponym) """
+
+
 _count_nodes_query = """
 MATCH (s:Synset)
 RETURN count(s) """
@@ -39,19 +48,13 @@ RETURN count(r) """
 def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'], 
                                 max_synsets_visited=100,
                                 queue_type='list',
+                                export_lemma=False,
                                 export_anything=False,
                                 ask_user_before_export=True,
                                 default_max_export=100,
                                 database='neo4j', URI="bolt://localhost:7687", USER="giovanni", PASSWD="BabeldistGraph"):
-
-    fname = utils.get_next_logfile_number('exporting_neo4j', extension='log')
-
-    start_synset_id = start_synset_id
-    max_synset_visited, n = max_synsets_visited, 0
-    visited = set()
-    q = utils.Queue(queue_type, [BabelSynsetID(id) for id in start_synset_id])
-
-    URI = URI
+    
+    fname = utils.get_next_logfile_number('exporting_neo4j', extension='log')    
     AUTH = (USER, PASSWD)
     
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
@@ -62,14 +65,23 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
             start_n, start_r = tx.run(_count_nodes_query).values()[0][0], tx.run(_count_edges_query).values()[0][0]
             
             with open(fname, 'x') as logfname:
-                logfname.write(f'database={database}\n')
-                logfname.write(f'start_node={start_synset_id}\n')
-                logfname.write(f'max_visits={max_synset_visited}\n')
-                logfname.flush()
-
                 start_t = time.time()
-                while q.q and n < max_synset_visited:
-                    pb = utils.get_progress_bar(int((n / max_synset_visited) * 100))
+                logfname.write(f'started at {utils.get_localtime_str()}\n')
+                logfname.write(f'max_synset_visited={max_synsets_visited}\n')
+                logfname.write(f'default_max_export={default_max_export}\n')
+                logfname.write(f'start_node={start_synset_id}\n')
+                logfname.write(f'queue_type={queue_type}\n')
+                logfname.write(f'export_lemma={export_lemma}\n')
+                logfname.write(f'export_anything={export_anything}\n')
+                logfname.write(f'database={database}\n')
+                logfname.flush()
+                
+                n = 0
+                visited = set()
+                q = utils.Queue(queue_type, [BabelSynsetID(id) for id in start_synset_id])
+                
+                while q.q and n < max_synsets_visited:
+                    pb = utils.get_progress_bar(int((n / max_synsets_visited) * 100))
                     print(pb, end='\r')                
 
                     try:
@@ -85,7 +97,6 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
                             else:
                                 hyponym_edges = hyponym_edges[:min(default_max_export, len(hyponym_edges))]
                         n += 1
-                        lemma = synset.main_sense().full_lemma
                     except (TimeoutExpired, LostRemote, AttributeError) as e:
                         hyponym_edges = []
 
@@ -95,20 +106,30 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
                             q.add_item(edge.id_target)
                             visited.add(edge.id_target)
                         try:
-                            hyponym_data.append([edge.id_target.id, edge.id_target.to_synset().main_sense().full_lemma])    
+                            if export_lemma:
+                                hyponym_data.append(
+                                    [edge.id_target.id, edge.id_target.to_synset().main_sense().full_lemma])
+                            else:
+                                hyponym_data.append(edge.id_target.id)
                         except AttributeError as e:
-                            logfname.write(f'Synset {edge.id_target} has not any main sense.\n')
+                            logfname.write(f'>>> Synset {edge.id_target} has not any main sense.\n')
                             logfname.flush()
                             
                     try:
-                        tx.run(_merge_graph_query, {
-                            'synsetID': str(synset.id),
-                            'hyponyms': hyponym_data,
-                            'synset_lemma': lemma})
+                        if export_lemma:
+                            lemma = synset.main_sense().full_lemma
+                            tx.run(_merge_graph_query, {
+                                'synsetID': str(synset.id), 'synset_lemma': lemma,
+                                'hyponyms': hyponym_data})
+                        else:
+                            tx.run(_merge_no_lemma_graph_query, {
+                                'synsetID': str(synset.id),
+                                'hyponyms': hyponym_data})
                     except Exception as e:
-                        e.with_traceback()
+                        logfname.write(f'>>> Exception {e} for synset {synset.id}: {e.args}\n')
+                        logfname.flush()
 
-                    if n % 1000 == 0:
+                    if n % 500 == 0:
                         tx.commit()
                         tx = session.begin_transaction()
                         
@@ -118,14 +139,18 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
                 print(f'Added {end_n - start_n} nodes, added {end_r - start_r} edges')
                                 
                 if q.q == []: logfname.write('Queue empy\n')
-                if n == max_synset_visited: logfname.write('Reached max visits\n')
+                if n == max_synsets_visited: logfname.write('Reached max visits\n')
                 logfname.write(f'Added {end_n - start_n} nodes, added {end_r - start_r} edges\n')
                 end_t = time.time()
+                logfname.write(f'ended at {utils.get_localtime_str()}\n')
                 m, s = divmod(end_t - start_t, 60)
-                logfname.write(f'total_time,{int(m)}m,{int(s)}s') 
+                h, m = divmod(m, 60)
+                logfname.write(f'total_time={int(h)}h,{int(m)}m,{int(s)}s') 
+
 
 exporting_babelnet_to_neo4j(
     max_synsets_visited=5000, 
-    database='babelexpDB', 
-    ask_user_before_export=False
+    database='BabelExpDBnoLemma', 
+    ask_user_before_export=False,
+    export_lemma=False
 )
