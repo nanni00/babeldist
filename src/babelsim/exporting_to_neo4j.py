@@ -149,8 +149,8 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
 
 
 exporting_babelnet_to_neo4j(
-    max_synsets_visited=5000, 
-    database='BabelExpDBnoLemma', 
+    max_synsets_visited=3000, 
+    database='BabelExpDBwithLemma', 
     ask_user_before_export=False,
-    export_lemma=False
+    export_lemma=True
 )

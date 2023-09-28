@@ -1,0 +1,8 @@
+started at 2023/9/28 21:34:45
+max_synset_visited=3000
+default_max_export=100
+start_node=['bn:00062164n']
+queue_type=list
+export_lemma=True
+export_anything=False
+database=BabelExpDBwithLemma

@@ -1,0 +1,12 @@
+started at 2023/9/28 19:37:55
+max_synset_visited=3000
+default_max_export=100
+start_node=['bn:00062164n']
+queue_type=list
+export_lemma=False
+export_anything=False
+database=BabelExpDBnoLemma
+Reached max visits
+Added 49825 nodes, added 53080 edges
+ended at 2023/9/28 21:2:0
+total_time=1h,24m,5s
