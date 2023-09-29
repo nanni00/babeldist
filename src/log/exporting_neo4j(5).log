@@ -6,3 +6,15 @@ queue_type=list
 export_lemma=True
 export_anything=False
 database=BabelExpDBwithLemma
+>>> Synset bn:12660747n has not any main sense.
+>>> Synset bn:25469576n has not any main sense.
+>>> Synset bn:04598419n has not any main sense.
+>>> Synset bn:18137937n has not any main sense.
+>>> Synset bn:07347696n has not any main sense.
+>>> Synset bn:06762614n has not any main sense.
+>>> Synset bn:06793876n has not any main sense.
+>>> Synset bn:08735419n has not any main sense.
+Reached max visits
+Added 49817 nodes, added 53072 edges
+ended at 2023/9/29 0:57:55
+total_time=3h,23m,10s
