@@ -1,10 +1,10 @@
 # to know database size:
 du -hc $NEO4J_HOME/data/databases/graph_name.db/*store.db*
 
-#       DB graph_name    SIZE     N_PROPS   NODES   EDGES
-# neo4j -                5.4 M      2       ~60000  ~60000
-# BabelExpDBnoLemma      5.3 M      2       49825   53080
-# BabelExpDBwithLemma    6.3 M      3       49817   53072
+#       DB graph_name   SIZE(MB) N_PROPS   NODES   EDGES
+# neo4j                  5.4        2       ~60000  ~60000
+# BabelExpDBnoLemma      6.7        1       65422   140872
+# BabelExpDBwithLemma    8.0        2       65410   140838
 
 
 # graph projection:
@@ -18,9 +18,14 @@ CALL gds.graph.project(
     }
 )
 
+# BabelExpDBnoLemma     5765 ms
+# BabelExpDBwithLemma    
+
 # to get statistics on the number of communities
 CALL gds.louvain.stats('BabelExpProj', {includeIntermediateCommunities: true}) 
-# 119 communities - 6278 ms
+# DB graph_name         time        communities
+# BabelExpDBnoLemma     8212 ms     149
+# BabelExpDBwithLemma
 
 # to compute the community detection over the projection
 CALL gds.louvain.mutate(
@@ -39,3 +44,4 @@ CALL gds.louvain.write(
         includeIntermediateCommunities: true
     }
 )
+
