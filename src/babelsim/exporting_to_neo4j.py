@@ -98,13 +98,17 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
                                 hyponym_edges = hyponym_edges[:min(default_max_export, len(hyponym_edges))]
                         n += 1
                     except (TimeoutExpired, LostRemote, AttributeError) as e:
+                        logfname.write(f">>> Error {e}: {e.args}\n")
+                        print(e)
                         hyponym_edges = []
 
                     hyponym_data = []
                     for edge in hyponym_edges:                        
                         if edge.id_target not in visited and edge.id_target not in q.q:                        
+                            if len(hyponym_edges) < 600: visited.add(edge.id_target) 
+                            # probabilmente se un nodo ha moltissimi nodi figli, questi sono delle foglie nel grafo,
+                            # e si può anche evitare di esplorarle e cercare i loro iponimi
                             q.add_item(edge.id_target)
-                            visited.add(edge.id_target)
                         try:
                             if export_lemma:
                                 hyponym_data.append(
@@ -112,22 +116,24 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
                             else:
                                 hyponym_data.append(edge.id_target.id)
                         except AttributeError as e:
-                            logfname.write(f'>>> Synset {edge.id_target} has not any main sense.\n')
+                            logfname.write(f'>>> Synset {edge.id_target} hyponym of {synset.id} has not any main sense.\n')
                             logfname.flush()
+                            print(e.args)
                             
-                    try:
+                    try:                        
                         if export_lemma:
                             lemma = synset.main_sense().full_lemma
-                            tx.run(_merge_graph_query, {
+                            r = tx.run(_merge_graph_query, {
                                 'synsetID': str(synset.id), 'synset_lemma': lemma,
                                 'hyponyms': hyponym_data})
                         else:
-                            tx.run(_merge_no_lemma_graph_query, {
+                            r = tx.run(_merge_no_lemma_graph_query, {
                                 'synsetID': str(synset.id),
                                 'hyponyms': hyponym_data})
                     except Exception as e:
                         logfname.write(f'>>> Exception {e} for synset {synset.id}: {e.args}\n')
                         logfname.flush()
+                        print(e.args)
 
                     if n % 500 == 0:
                         tx.commit()
@@ -149,7 +155,17 @@ def exporting_babelnet_to_neo4j(start_synset_id=['bn:00062164n'],
 
 
 exporting_babelnet_to_neo4j(
-    max_synsets_visited=3000, 
+    max_synsets_visited=2000,
+    start_synset_id=['bn:00009677n'], 
+    database='BabelExpDBnoLemma', 
+    ask_user_before_export=False,
+    export_lemma=False
+)
+print('First export finished')
+
+exporting_babelnet_to_neo4j(
+    max_synsets_visited=2000,
+    start_synset_id=['bn:00009677n'], 
     database='BabelExpDBwithLemma', 
     ask_user_before_export=False,
     export_lemma=True

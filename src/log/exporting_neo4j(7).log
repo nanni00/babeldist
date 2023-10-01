@@ -1,0 +1,18 @@
+started at 2023/10/1 11:29:4
+max_synset_visited=2000
+default_max_export=100
+start_node=['bn:00009677n']
+queue_type=list
+export_lemma=True
+export_anything=False
+database=BabelExpDBwithLemma
+>>> Error timeout after 60s, when calling remote method get_synsets: ('timeout after 60s, when calling remote method get_synsets',)
+>>> Synset bn:13310333n hyponym of bn:01090768n has not any main sense.
+>>> Synset bn:18137937n hyponym of bn:00030815n has not any main sense.
+>>> Synset bn:03537538n hyponym of bn:19842209n has not any main sense.
+>>> Synset bn:18500574n hyponym of bn:00010605n has not any main sense.
+>>> Synset bn:13382778n hyponym of bn:00013282n has not any main sense.
+Reached max visits
+Added 15514 nodes, added 17269 edges
+ended at 2023/10/1 13:24:52
+total_time=1h,55m,47s

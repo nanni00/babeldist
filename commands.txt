@@ -1,7 +1,11 @@
 # to know database size:
 du -hc $NEO4J_HOME/data/databases/graph_name.db/*store.db*
-# neo4j - 5.2 M
-# babelexpdbnolemma - 5.3 M
+
+#       DB graph_name    SIZE     N_PROPS   NODES   EDGES
+# neo4j -                5.4 M      2       ~60000  ~60000
+# BabelExpDBnoLemma      5.3 M      2       49825   53080
+# BabelExpDBwithLemma    6.3 M      3       49817   53072
+
 
 # graph projection:
 CALL gds.graph.project(

@@ -209,7 +209,9 @@ class DistanceSimilarity:
         self.evaluate_similarities(id1, id2, verbose)
 
 
-ds = DistanceSimilarity(database='babelexpdb')
-while (s := input('Another example? ')) != 'n':
-    ds.evaluate_similarities(ds.get_random_synset_id(), ds.get_random_synset_id())
+ds = DistanceSimilarity(database='BabelExpDBwithLemma')
+ds.print_neo4j_graph_statistics()
+
+#while (s := input('Another example? ')) != 'n':
+#    ds.evaluate_similarities(ds.get_random_synset_id(), ds.get_random_synset_id())
 

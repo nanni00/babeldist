@@ -1,0 +1,13 @@
+started at 2023/10/1 10:48:6
+max_synset_visited=2000
+default_max_export=100
+start_node=['bn:00009677n']
+queue_type=list
+export_lemma=False
+export_anything=False
+database=BabelExpDBnoLemma
+>>> Error timeout after 60s, when calling remote method get_synsets: ('timeout after 60s, when calling remote method get_synsets',)
+Reached max visits
+Added 15518 nodes, added 17270 edges
+ended at 2023/10/1 11:29:4
+total_time=0h,40m,57s
