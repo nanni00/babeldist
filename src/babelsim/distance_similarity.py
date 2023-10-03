@@ -40,7 +40,8 @@ class DistanceSimilarity:
         MATCH s1_sp = shortestPath((s1)-[:IS_A*1..12]-(root))
         MATCH s2_sp = shortestPath((s2)-[:IS_A*1..12]-(root))
         WITH length(s1_sp) AS dist_s1_root, length(s2_sp) AS dist_s2_root, LCS_depth
-        RETURN (toFloat(LCS_depth) / (dist_s1_root + dist_s2_root)) AS wup_similarity """
+        RETURN 2 * (toFloat(LCS_depth) / (dist_s1_root + dist_s2_root)) AS wup_similarity, 
+            LCS_depth, dist_s1_root, dist_s2_root """
 
         self._lch_query = """
         MATCH t = (root:Synset {synsetID: $root_id})<-[:IS_A*1..12]-(child:Synset) 
@@ -49,14 +50,15 @@ class DistanceSimilarity:
         MATCH (s1:Synset {synsetID: $synsetID_1})
         MATCH (s2:Synset {synsetID: $synsetID_2})
         MATCH shortest_path = shortestPath((s1)-[:IS_A*..12]-(s2))
-        WITH D, length(shortest_path) as length_sp
-        RETURN -log(toFloat(length_sp) / (2*D)) as lch_similarity, D as taxonomy_length, length_sp """
+        WITH D, length(shortest_path) as shortest_path_length
+        RETURN -log(toFloat(shortest_path_length) / (2*D)) as lch_similarity, 
+            D, shortest_path_length """
 
         self._path_query = """
         MATCH (s1:Synset {synsetID: $synsetID_1})
         MATCH (s2:Synset {synsetID: $synsetID_2})
         MATCH p = shortestPath((s1)-[:IS_A*..12]-(s2))
-        RETURN 1.0/length(p) as path_similarity """
+        RETURN 1.0/length(p) as path_similarity, length(p) as shortest_path_length"""
 
         self._community_path_query = """
         MATCH (s1:Synset {synsetID: $synsetID_1})
@@ -76,7 +78,7 @@ class DistanceSimilarity:
              'synsetID_2': s2_id},
             database_=self._database,
             result_transformer_=neo4j.Result.data)
-        return p[0]['length_shortestPath']
+        return p[0]['shortest_path_length']
 
     def shortest_path_synsets_lemmas(self, s1_id: str, s2_id: str):
         shortest_path = self._driver.execute_query(
@@ -91,30 +93,51 @@ class DistanceSimilarity:
                 print(f"{item['synsetID']}, {item['lemma']}")
                 
     def wup_similarity(self, s1_id: str, s2_id: str):
-        return self._driver.execute_query(
+        res = self._driver.execute_query(
             self._wup_query,
             {'root_node_id': self._root_node_id,
              'synsetID_1': s1_id,
              'synsetID_2': s2_id},
             database_=self._database,
-            result_transformer_=neo4j.Result.data)[0]['wup_similarity']
+            result_transformer_=neo4j.Result.data)[0]
+        return res['wup_similarity'], res['LCS_depth'], res['dist_s1_root'], res['dist_s2_root']
 
     def lch_similarity(self, s1_id: str, s2_id: str):
-        return self._driver.execute_query(
+        res = self._driver.execute_query(
             self._lch_query,
             {'root_id': self._root_node_id,
              'synsetID_1': s1_id,
              'synsetID_2': s2_id},
             database_=self._database,
-            result_transformer_=neo4j.Result.data)[0]['lch_similarity']
-
+            result_transformer_=neo4j.Result.data)[0]
+        return res['lch_similarity'], res['shortest_path_length'], res['D']
+    
     def path_similarity(self, s1_id: str, s2_id: str):
-        return self._driver.execute_query(
+        res = self._driver.execute_query(
             self._path_query,
             {'synsetID_1': s1_id,
              'synsetID_2': s2_id},
             database_=self._database,
-            result_transformer_=neo4j.Result.data)[0]['path_similarity']
+            result_transformer_=neo4j.Result.data)[0]
+        return res['path_similarity'], res['shortest_path_length']
+    
+    def get_community_distance(self, s1_id: str, s2_id: str, path=None):
+        if path == None:
+            result = self._driver.execute_query(
+                self._community_path_query,
+                {'synsetID_1': s1_id,
+                 'synsetID_2': s2_id},
+                database_=self._database,
+                result_transformer_=neo4j.Result.data)[0]
+            path = result['shortest_path']
+
+        comcount = 0 
+        first_synset = path.pop(0)
+        for x in (synset for synset in path if synset != 'IS_A'):
+            if set(first_synset['communityIDs']).intersection(set(x['communityIDs'])) == set():
+                comcount += 1
+            first_synset = x
+        return comcount
 
     def community_path_similarity(self, s1_id: str, s2_id: str):
         result = self._driver.execute_query(
@@ -125,25 +148,31 @@ class DistanceSimilarity:
             result_transformer_=neo4j.Result.data)[0]
         sp, splen = result['shortest_path'], result['shortest_path_length']
 
-        comcount = 0 # it's like 1 - 1
-        first_synset = sp.pop(0)
-        for x in (synset for synset in sp if synset != 'IS_A'):
-            if set(first_synset['communityIDs']).intersection(set(x['communityIDs'])) == set():
-                comcount += 1
-            first_synset = x
-
-        return -np.log(1 / (splen + comcount))
+        comcount = self.get_community_distance(s1_id, s2_id, sp)
+        return -np.log(1 / (splen + comcount)), splen, comcount
 
     def evaluate_similarities(self, s1_id: str, s2_id: str, verbose=True):
+        wup = self.wup_similarity(s1_id, s2_id)
+        lch = self.lch_similarity(s1_id, s2_id)
+        path = self.path_similarity(s1_id, s2_id)
+        cp = self.community_path_similarity(s1_id, s2_id)
+
         if verbose:
             from babelnet import BabelSynsetID
             s1, s2 = BabelSynsetID(s1_id).to_synset(), BabelSynsetID(s2_id).to_synset()
             print(f'{s1_id} - {s1.main_sense().full_lemma} - {s1.main_gloss()}')
             print(f'{s2_id} - {s2.main_sense().full_lemma} - {s2.main_gloss()}')
-        print(f'wup:\t\t{   round(self.wup_similarity(s1_id, s2_id), 3)}')
-        print(f'lch:\t\t{   round(self.lch_similarity(s1_id, s2_id), 3)}')
-        print(f'path:\t\t{  round(self.path_similarity( s1_id, s2_id), 3)}')
-        print(f'path_com:\t{round(self.community_path_similarity(s1_id, s2_id), 3)}')
+            
+            print(f'wup:\t\t{round(wup[0], 3)}\tLCS_depth={wup[1]}\td_A_root={wup[2]}\td_B_root={wup[3]}')
+            print(f'lch:\t\t{round(lch[0], 3)}\tsp_len={lch[1]}\tD={lch[2]}')
+            print(f'path:\t\t{round(path[0], 3)}\tsp_len={path[1]}')
+            print(f'path_com:\t{round(cp[0], 3)}\tsp_len={cp[1]}\tcomcount={cp[2]}')
+        else:
+            print(f'{s1_id}, {s2_id}')
+            print(f'wup:\t\t{round(wup[0], 3)}')
+            print(f'lch:\t\t{round(lch[0], 3)}')
+            print(f'path:\t\t{round(path[0], 3)}')
+            print(f'path_com:\t{round(cp[0], 3)}')
 
     def nodes_with_common_ancestor(self, ancestor_id):
         number_of_nodes_with_ancestor_query = "MATCH (n:Synset)-[:IS_A*]->(ancestor:Synset {synsetID: $ancestorID}) RETURN count(n)"
@@ -173,8 +202,12 @@ class DistanceSimilarity:
         self.evaluate_similarities(id1, id2, verbose)
 
 
-ds = DistanceSimilarity(database='BabelExpDBnoLemma')
-ds.evaluate_similarities('bn:00015267n', 'bn:00016606n') # Cane e Gatto
+# ds = DistanceSimilarity(database='BabelExpDBnoLemma')
+
+# ds.evaluate_similarities('bn:00015267n', 'bn:00016606n')
+# ds.evaluate_similarities('bn:00015267n', 'bn:00044576n')
+# ds.evaluate_similarities('bn:01174701n', 'bn:20243349n')
+
 
 #while (s := input('Another example? ')) != 'n':
 #    ds.evaluate_similarities(ds.get_random_synset_id(), ds.get_random_synset_id())

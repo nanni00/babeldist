@@ -1,0 +1,27 @@
+﻿[
+  {
+    "nodeProjection": {
+      "Synset": {
+        "label": "Synset",
+        "properties": {
+
+        }
+      }
+    },
+    "relationshipProjection": {
+      "IS_A": {
+        "orientation": "UNDIRECTED",
+        "indexInverse": false,
+        "aggregation": "DEFAULT",
+        "type": "IS_A",
+        "properties": {
+
+        }
+      }
+    },
+    "graphName": "BabelExpProjWithLemma",
+    "nodeCount": 65410,
+    "relationshipCount": 140838,
+    "projectMillis": 107
+  }
+]

@@ -1,0 +1,49 @@
+﻿[
+  {
+    "writeMillis": 2022,
+    "nodePropertiesWritten": 65410,
+    "modularity": 0.9654858663098144,
+    "modularities": [
+      0.8720434684323263,
+      0.9483583471664147,
+      0.964373835484802,
+      0.9654858663098144
+    ],
+    "ranLevels": 4,
+    "communityCount": 150,
+    "communityDistribution": {
+      "p99": 1337,
+      "min": 69,
+      "max": 1421,
+      "mean": 436.06666666666666,
+      "p90": 780,
+      "p50": 402,
+      "p999": 1421,
+      "p95": 910,
+      "p75": 562
+    },
+    "postProcessingMillis": 161,
+    "preProcessingMillis": 0,
+    "computeMillis": 4145,
+    "configuration": {
+      "maxIterations": 10,
+      "writeConcurrency": 4,
+      "seedProperty": null,
+      "consecutiveIds": false,
+      "maxLevels": 10,
+      "concurrency": 4,
+      "jobId": "50c0cdad-9e11-44ed-9f2b-21c04e3edd65",
+      "writeProperty": "communityIDs",
+      "logProgress": true,
+      "includeIntermediateCommunities": true,
+      "nodeLabels": [
+        "*"
+      ],
+      "sudo": false,
+      "relationshipTypes": [
+        "*"
+      ],
+      "tolerance": 0.0001
+    }
+  }
+]
